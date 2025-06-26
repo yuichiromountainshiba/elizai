@@ -129,11 +129,37 @@ def handle_summarize(data):
     transcript = data.get('transcript', '')
 
     system_prompt = (
-        "You are a medical scribe. Summarize the provided transcripts into a formal structured note for a spine surgery consult. IF information is not available do not hallucinate, instead report unknown<br>"
-        "Specify laterality in the chief complaint (e.g., left, midline, bilateral right worse than left, etc). For PT and injections, "
+        "You are a medical scribe. Summarize the provided transcripts into a formal structured note for a orthopedic trauma consult. IF information is not available do not hallucinate, instead report not assessed"
+        "Specify laterality in the chief complaint (e.g., left, bilateral right worse than left, etc)."
         "include details such as dates, types, providers, and relief. Extract and format in html with formatting, no title needed, omit markdown rendering tags, Do not wrap section headers in angle brackets (<>). Use valid HTML tags only. i am inputting this summary to a webapp."
-        "Chief Complaint:\nBrief History:\nDuration:\nRadiating Symptoms:\nAggravating/Relieving Factors:\nTried:\n"
-        "  - Medications:\n  - Therapy:\n  - Injections:\nOther relevant history:\n \n Exam: \n Assessment: \n Discussion: \n Plan:"
+        "try to make it as similar fitting to this template as possible: " 
+        """Chief Complaint:
+[]
+
+HPI:
+[]
+
+Past medical history, past surgical history, family history, medications, allergies, and review of systems are reviewed on the comprehensive intake form which is scanned into the chart, notable as above.
+
+Social History:
+   - Smoking status: 
+   - EtOH:
+   - Ambulatory status:
+   - Employment: 
+
+Physical exam:
+[]
+
+Imaging:
+[ ] radiographs are obtained and reviewed with the patient. They demonstrate [].
+
+Assessment and plan:
+[]
+
+Diagnosis and treatment options discussed with the patient. []
+ 
+The patient is in agreement with the treatment plan and all of their questions were answered."""
+
     )
 
     response = client.chat.completions.create(
@@ -156,7 +182,37 @@ def handle_summarize(data):
     transcript = data.get('transcript', '')
 
     system_prompt = (
-        "You are a medical scribe. Summarize the provided transcripts into a follow-up progress note with the format of Interval history: (any change in symptoms, if no exam mentioned in discussion document no significant changes in exam, and any other relevant history that may affect the plan) and Assessment/Plan:. IF information is not available do not hallucinate, instead report unknown"
+        "You are a medical scribe. Summarize the provided transcripts into a follow-up progress note with the format of "
+        """CHIEF COMPLAINT:
+[]
+ 
+DATE OF SURGERY:
+[]
+ 
+HISTORY OF PRESENT ILLNESS:
+[]
+ 
+Past medical history, past surgical history, family history, medications, allergies, and review of systems are reviewed on the comprehensive intake form which is scanned into the chart, notable as above.
+ 
+SOCIAL HISTORY:
+   - Smoking status: 
+   - EtOH:
+   - Ambulatory status:
+   - Employment: 
+ 
+PHYSICAL EXAMINATION:
+[]
+ 
+IMAGING:
+[] radiographs are obtained and reviewed with the patient. They demonstrate [].
+ 
+ASSESSMENT AND PLAN:
+[]
+
+We reviewed the findings. []
+
+The patient is in agreement with the treatment plan and all of their questions were answered."""
+        ". IF information is not available do not hallucinate, instead report unknown"
         " Extract and format in html with formatting, no title needed, omit markdown rendering tags,Do not wrap section headers in angle brackets (<>). Use valid HTML tags only.  i am inputting this summary to a webapp."
 
     )
