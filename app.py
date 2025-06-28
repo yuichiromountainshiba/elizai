@@ -96,7 +96,7 @@ def upload_scribe():
     file.save(filepath)
 
     transcript = transcribe_audio(filepath)
-    session_id = request.args.get('session_id', str(uuid.uuid4()))
+    session_id = request.args.get('session_id', str(uuid.uuid4())).upper()
     user_sessions.setdefault(session_id, {'scribe': []})
 
     user_sessions[session_id]['scribe'] += transcript
@@ -118,26 +118,28 @@ def on_disconnect():
 
 @socketio.on("reset_dashboard")
 def handle_reset_dashboard(data):
-    session_id = data.get("session_id")
+    session_id = data.get("session_id").upper()
     print(f"🔁 Resetting dashboard for session: {session_id}")
     socketio.emit("reset_dashboard", {"session_id": session_id})
 
 @socketio.on('summarize')
 def handle_summarize(data):
-    session_id = data.get("session_id")
-    print("🧠 Summarize event received with data:", data)
+    session_id = data.get("session_id").upper()
+    print("🧠 Summarize event received with data: {session_id}", data)
     transcript = data.get('transcript', '')
 
     system_prompt = (
         "You are a medical scribe. Summarize the provided transcripts into a formal structured note for a orthopedic trauma consult. IF information is not available do not hallucinate, instead report not assessed"
+        " Extract and format in html with formatting, no title needed, omit markdown rendering tags,Do not wrap section headers in angle brackets (<>). Use valid HTML tags only.  i am inputting this summary to a webapp."
         "Specify laterality in the chief complaint (e.g., left, bilateral right worse than left, etc)."
-        "include details such as dates, types, providers, and relief. Extract and format in html with formatting, no title needed, omit markdown rendering tags, Do not wrap section headers in angle brackets (<>). Use valid HTML tags only. i am inputting this summary to a webapp."
-        "try to make it as similar fitting to this template as possible: " 
+        "Under the assessment and plan section: the first line should be a list of diagnosis, in the format of open/closed (what grade if open), displaced vs minimally displaced, laterality,   bone name, fracture (e.g., closed displaced right distal radius). if surgery is mentioned, the diagnosis list should include s/p (name of surgery, date of surgery)     Extract and format in html with formatting, no title needed, omit markdown rendering tags, Do not wrap section headers in angle brackets (<>). Use valid HTML tags only. i am inputting this summary to a webapp."
+        
+               "try to make it as similar fitting to this template as possible: " 
         """Chief Complaint:
 []
 
 HPI:
-[]
+
 
 Past medical history, past surgical history, family history, medications, allergies, and review of systems are reviewed on the comprehensive intake form which is scanned into the chart, notable as above.
 
@@ -148,15 +150,15 @@ Social History:
    - Employment: 
 
 Physical exam:
-[]
+
 
 Imaging:
-[ ] radiographs are obtained and reviewed with the patient. They demonstrate [].
+______ radiographs are obtained and reviewed with the patient. They demonstrate _____.
 
 Assessment and plan:
-[]
 
-Diagnosis and treatment options discussed with the patient. []
+
+Diagnosis and treatment options discussed with the patient. 
  
 The patient is in agreement with the treatment plan and all of their questions were answered."""
 
@@ -177,12 +179,18 @@ The patient is in agreement with the treatment plan and all of their questions w
 
 @socketio.on('summarizeFU')
 def handle_summarize(data):
-    session_id = data.get("session_id")
+    session_id = data.get("session_id").upper()
     print("🧠 Summarize follow-up received with data:", data)
     transcript = data.get('transcript', '')
 
     system_prompt = (
-        "You are a medical scribe. Summarize the provided transcripts into a follow-up progress note with the format of "
+        "You are a medical scribe. Summarize the provided transcripts into a follow-up progress note. "
+        " Extract and format in html with formatting, no title needed, omit markdown rendering tags,Do not wrap section headers in angle brackets (<>). Use valid HTML tags only.  i am inputting this summary to a webapp."
+           " If information is not available do not hallucinate, instead report Not Assessed"
+        
+        "Under the assessment and plan section: the first line should be a list of diagnosis, in the format of open/closed (what grade if open, assume closed if not specified), displaced vs minimally displaced (or omit if not specified), laterality,   bone name, fracture (e.g., closed displaced right distal radius). if surgery is mentioned, the diagnosis list should include s/p (name of surgery, date of surgery)     Extract and format in html with formatting, no title needed, omit markdown rendering tags, Do not wrap section headers in angle brackets (<>). Use valid HTML tags only. i am inputting this summary to a webapp."
+       
+        " use the following format "
         """CHIEF COMPLAINT:
 []
  
@@ -201,19 +209,17 @@ SOCIAL HISTORY:
    - Employment: 
  
 PHYSICAL EXAMINATION:
-[]
+
  
 IMAGING:
-[] radiographs are obtained and reviewed with the patient. They demonstrate [].
+_____ radiographs are obtained and reviewed with the patient. They demonstrate ____.
  
 ASSESSMENT AND PLAN:
-[]
 
-We reviewed the findings. []
 
-The patient is in agreement with the treatment plan and all of their questions were answered."""
-        ". IF information is not available do not hallucinate, instead report unknown"
-        " Extract and format in html with formatting, no title needed, omit markdown rendering tags,Do not wrap section headers in angle brackets (<>). Use valid HTML tags only.  i am inputting this summary to a webapp."
+
+We reviewed the findings. The patient is in agreement with the treatment plan and all of their questions were answered."""
+     
 
     )
 

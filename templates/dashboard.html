@@ -157,16 +157,20 @@
 <script>
     const socket = io();
     const scribeBox = document.getElementById("scribe-transcript-box");
-    let sessionId = prompt("Enter session ID:");
+    let sessionId = prompt("Enter session ID:").toUpperCase();
 
     socket.on("scribe_transcript", (data) => {
         console.log("📥 Scribe Transcript received:", data.transcript);
-        if (data.session_id !== sessionId) return;
-        data.transcript.forEach(msg => {
-            const div = document.createElement("div");
-            div.textContent = `${msg.role}: ${msg.content}`;
-            scribeBox.appendChild(div);
-        });
+        if (data.session_id === sessionId) {
+            data.transcript.forEach(msg => {
+                const div = document.createElement("div");
+                div.textContent = `${msg.role}: ${msg.content}`;
+                scribeBox.appendChild(div);
+            });
+        }
+        else {
+            console.log("Session ID mismatch:", data.session_id, sessionId);
+        }
     });
 
 
@@ -199,7 +203,7 @@
         console.log("🧠 Summary request sent with  scribe text.");
     }
 
-    function generateFollowup() {
+    function generateFU() {
             console.log("🧠 Generate Follow-up button clicked!");
 
             const scribeText = Array.from(document.querySelectorAll('#scribe-transcript-box div'))
